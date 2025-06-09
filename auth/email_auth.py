@@ -41,7 +41,7 @@ async def signUpWithEmailPassword(user: SignUpModel):
             userEmail=user.userEmail,
         )
 
-        await db[USERS_COLLECTION].insert_one(user_data)
+        await db[USERS_COLLECTION].insert_one(user_data.dict())
         logger.info(f"User data inserted into MongoDB for UID={firebase_user.uid}")
 
         return {"message": "User created successfully", "uid": firebase_user.uid}

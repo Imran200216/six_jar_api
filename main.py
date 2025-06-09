@@ -14,7 +14,7 @@ from config.logging_config import logger
 from dotenv import load_dotenv
 
 
-# Load Env
+# Load .env
 load_dotenv()
 
 
