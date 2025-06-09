@@ -8,6 +8,7 @@ charset-normalizer==3.4.2
 click==8.2.1
 cryptography==45.0.3
 dnspython==2.7.0
+email_validator==2.2.0
 fastapi==0.115.12
 firebase-admin==6.9.0
 google-api-core==2.25.0

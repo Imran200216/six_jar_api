@@ -10,6 +10,13 @@ from config.mongo_db_config import init_mongodb
 # Logger
 from config.logging_config import logger
 
+# env
+from dotenv import load_dotenv
+
+
+# Load Env
+load_dotenv()
+
 
 # ✅ Initialize Firebase & MongoDB
 init_firebase()
