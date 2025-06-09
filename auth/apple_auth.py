@@ -4,7 +4,7 @@ from jose import jwt
 from fastapi import APIRouter, HTTPException
 from config.logging_config import logger
 from config.mongo_db_config import db
-from schemas.apple_auth import sign_in_model
+from schemas.apple_auth.sign_in_model import SignInModel
 from constants.collection_names import USERS_COLLECTION
 from dotenv import load_dotenv
 
@@ -21,7 +21,7 @@ router = APIRouter(tags=["Authentication 🔐"])
 
 
 @router.post("/signInWithApple")
-async def sign_in_with_apple(payload: sign_in_model):
+async def sign_in_with_apple(payload: SignInModel):
     try:
         identity_token = payload.identityToken
         logger.info("Received Apple identity token")
