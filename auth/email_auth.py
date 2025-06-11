@@ -7,6 +7,7 @@ from firebase_admin import auth
 from config.mongo_db_config import db
 from models.user_model import UserModel
 from constants.collection_names import USERS_COLLECTION
+import httpx
 
 import requests
 import os
@@ -55,6 +56,7 @@ async def signUpWithEmailPassword(user: SignUpModel):
         raise HTTPException(status_code=500, detail=f"SignUp failed: {str(e)}")
 
 
+# Sign In With Email Password
 @router.post("/signInWithEmailPassword")
 async def signInWithEmailPassword(user: SignInModel):
     logger.info(f"Attempting to sign in user with email: {user.userEmail}")
@@ -100,28 +102,46 @@ async def signInWithEmailPassword(user: SignInModel):
 
 # Forget Password
 @router.post("/forgetPassword")
-def forgetPassword(user: ForgetPasswordModel):
+async def forgetPassword(user: ForgetPasswordModel):
     try:
-        logger.info(
-            f"Attempting to send Forget Password Link to user with email: {user.userEmail}"
-        )
+        logger.info(f"Attempting to send password reset link to: {user.userEmail}")
 
-        reset_link = auth.generate_password_reset_link(user.userEmail)
-
-        logger.info(f"Password reset link generated for {user.userEmail}")
-        return {
-            "message": "Password reset link generated successfully",
-            "resetLink": reset_link,
+        url = f"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={FIREBASE_WEB_API_KEY}"
+        payload = {
+            "requestType": "PASSWORD_RESET",
+            "email": user.userEmail,
         }
 
-    except auth.UserNotFoundError:
-        logger.warning(f"No user found with email: {user.userEmail}")
-        raise HTTPException(status_code=404, detail="User not found")
+        async with httpx.AsyncClient() as client:
+            logger.debug(f"Sending request to Firebase Auth API for {user.userEmail}")
+            response = await client.post(url, json=payload)
+            response_data = response.json()
+
+            if response.status_code != 200:
+                error_message = response_data.get("error", {}).get(
+                    "message", "Unknown error"
+                )
+                logger.error(
+                    f"Failed to send password reset for {user.userEmail}. "
+                    f"Status: {response.status_code}, Error: {error_message}"
+                )
+                raise HTTPException(status_code=400, detail=error_message)
+
+            logger.info(f"Password reset link successfully sent to {user.userEmail}")
+            return {"message": "Password reset link sent successfully to your email."}
+
+    except httpx.RequestError as e:
+        logger.error(f"Network error while contacting Firebase API: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail="Failed to connect to authentication service"
+        )
 
     except Exception as e:
         logger.error(
-            f"Failed to generate password reset link for {user.userEmail}: {str(e)}"
+            f"Unexpected error while processing password reset for {user.userEmail}: {str(e)}",
+            exc_info=True,
         )
         raise HTTPException(
-            status_code=500, detail=f"Failed to generate reset link: {str(e)}"
+            status_code=500,
+            detail="An unexpected error occurred while processing your request",
         )
